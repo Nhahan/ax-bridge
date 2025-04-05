@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, ThreeEvent, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Line, Billboard } from '@react-three/drei';
+import { OrbitControls, Text, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
@@ -25,43 +25,52 @@ function Node({ position, text, isCenter = false, onPointerOver, onPointerOut }:
   const baseScale = isCenter ? 1.8 : 1;
   const nodeRadius = isCenter ? 0.08 : 0.06;
   const baseOpacity = isCenter ? 0.9 : 0.75;
-  const baseColor = isCenter ? '#BF3BDE' : '#8888ff';
-  const centerBaseEmissiveIntensity = 0.6;
+  const centerBaseColor = '#7C3AED';
+  const nonCenterBaseColor = '#8888ff'; 
+  const centerBaseEmissiveIntensity = 0.6; 
   const nonCenterBaseEmissiveIntensity = 0.25;
 
   useEffect(() => {
-      if (materialRef.current) {
-          materialRef.current.opacity = 0;
-          materialRef.current.transparent = true;
-          materialRef.current.emissiveIntensity = isCenter ? centerBaseEmissiveIntensity : nonCenterBaseEmissiveIntensity;
-          materialRef.current.color.set(baseColor);
-          materialRef.current.emissive.set(baseColor);
+    if (materialRef.current) {
+      materialRef.current.opacity = 0;
+      materialRef.current.transparent = true;
+      if (isCenter) {
+        materialRef.current.emissiveIntensity = centerBaseEmissiveIntensity; 
+        materialRef.current.color.set(centerBaseColor);
+        materialRef.current.emissive.set(centerBaseColor);
+      } else {
+        materialRef.current.emissiveIntensity = nonCenterBaseEmissiveIntensity;
+        materialRef.current.color.set(nonCenterBaseColor);
+        materialRef.current.emissive.set(nonCenterBaseColor);
       }
-  }, [isCenter, baseColor]);
+    }
+  }, [isCenter]); 
 
   useFrame((_, delta) => {
     if (!fadeInComplete.current && materialRef.current) {
-      materialRef.current.opacity = THREE.MathUtils.lerp(materialRef.current.opacity, baseOpacity, delta * 2);
-      if (Math.abs(materialRef.current.opacity - baseOpacity) < 0.01) {
-        materialRef.current.opacity = baseOpacity;
+      const currentBaseOpacity = isCenter ? baseOpacity : 0.75;
+      materialRef.current.opacity = THREE.MathUtils.lerp(materialRef.current.opacity, currentBaseOpacity, delta * 2);
+      if (Math.abs(materialRef.current.opacity - currentBaseOpacity) < 0.01) {
+        materialRef.current.opacity = currentBaseOpacity;
         fadeInComplete.current = true;
       }
     }
 
     if (fadeInComplete.current && materialRef.current) {
-        const targetOpacity = isCenter ? 0.9 : (hovered ? 1.0 : 0.75);
-        materialRef.current.opacity = THREE.MathUtils.lerp(materialRef.current.opacity, targetOpacity, delta * 10);
+      const targetOpacity = isCenter ? baseOpacity : (hovered ? 1.0 : 0.75);
+      materialRef.current.opacity = THREE.MathUtils.lerp(materialRef.current.opacity, targetOpacity, delta * 10);
 
-        if (isCenter) {
-            const targetEmissiveIntensity = hovered ? 1.1 : centerBaseEmissiveIntensity;
-            materialRef.current.emissive.lerp(new THREE.Color(baseColor), delta * 8);
-            materialRef.current.emissiveIntensity = THREE.MathUtils.lerp(materialRef.current.emissiveIntensity, targetEmissiveIntensity, delta * 10);
-        } else {
-            const targetEmissiveIntensity = nonCenterBaseEmissiveIntensity;
-            materialRef.current.color.lerp(new THREE.Color(baseColor), delta * 8);
-            materialRef.current.emissive.lerp(new THREE.Color(baseColor), delta * 8);
-            materialRef.current.emissiveIntensity = THREE.MathUtils.lerp(materialRef.current.emissiveIntensity, targetEmissiveIntensity, delta * 10);
-        }
+      if (isCenter) {
+        const targetEmissiveIntensity = hovered ? 1.1 : centerBaseEmissiveIntensity; 
+        materialRef.current.emissiveIntensity = THREE.MathUtils.lerp(materialRef.current.emissiveIntensity, targetEmissiveIntensity, delta * 10);
+        materialRef.current.color.lerp(new THREE.Color(centerBaseColor), delta * 8);
+        materialRef.current.emissive.lerp(new THREE.Color(centerBaseColor), delta * 8);
+      } else {
+        const targetEmissiveIntensity = nonCenterBaseEmissiveIntensity;
+        materialRef.current.color.lerp(new THREE.Color(nonCenterBaseColor), delta * 8);
+        materialRef.current.emissive.lerp(new THREE.Color(nonCenterBaseColor), delta * 8);
+        materialRef.current.emissiveIntensity = THREE.MathUtils.lerp(materialRef.current.emissiveIntensity, targetEmissiveIntensity, delta * 10);
+      }
     }
     
     if (ref.current) {
@@ -86,16 +95,17 @@ function Node({ position, text, isCenter = false, onPointerOver, onPointerOut }:
         setHovered(false);
         onPointerOut(e);
       }}
+      renderOrder={isCenter ? 3 : 2}
     >
       <sphereGeometry args={[nodeRadius, 24, 24]} />
       <meshStandardMaterial 
         ref={materialRef}
-        emissiveIntensity={isCenter ? centerBaseEmissiveIntensity : nonCenterBaseEmissiveIntensity}
         roughness={0.4}
         metalness={0.3}
-        toneMapped={false}
+        toneMapped={true}
         transparent={true}
         opacity={0} 
+        depthTest={!isCenter}
       />
     </mesh>
   );
@@ -170,22 +180,22 @@ function MovingParticle({ start, end, delay }: ParticleProps) {
 
 interface ScreenPositionUpdaterProps {
   trackPosition: THREE.Vector3 | null;
-  yOffset?: number;
+  isCenter: boolean;
   onUpdatePosition: (screenPos: { x: number; y: number } | null) => void;
 }
 
-function ScreenPositionUpdater({ trackPosition, yOffset = 0, onUpdatePosition }: ScreenPositionUpdaterProps) {
+function ScreenPositionUpdater({ trackPosition, isCenter, onUpdatePosition }: ScreenPositionUpdaterProps) {
   const { camera, size } = useThree();
+  const pixelOffsetY = isCenter ? -22 : -17;
 
   useFrame(() => {
     if (trackPosition) {
       const position3D = trackPosition.clone();
-      position3D.y += yOffset;
       position3D.project(camera);
       
       const x = (position3D.x * size.width) / 2;
       const y = -(position3D.y * size.height) / 2;
-      onUpdatePosition({ x, y });
+      onUpdatePosition({ x, y: y + pixelOffsetY });
     } else {
       onUpdatePosition(null);
     }
@@ -211,11 +221,9 @@ interface GraphRendererProps {
   edges: GraphEdge[];
   handlePointerOver: (event: ThreeEvent<PointerEvent>, text: string, isCenter: boolean, position: THREE.Vector3) => void;
   handlePointerOut: (event: ThreeEvent<PointerEvent>) => void;
-  hoveredText: string | null;
   hoveredNodeIsCenter: boolean;
-  textPosition: THREE.Vector3;
-  centerNodeTrackPosition: THREE.Vector3 | null;
-  onUpdateCenterScreenPos: (screenPos: { x: number; y: number } | null) => void;
+  hoveredNodeTrackPosition: THREE.Vector3 | null;
+  onUpdateTextScreenPos: (screenPos: { x: number; y: number } | null) => void;
   isInteracting: boolean;
   controlsRef: React.RefObject<OrbitControlsImpl | null>;
 }
@@ -224,19 +232,18 @@ const PRELOAD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234
 
 function GraphRenderer({ 
   nodes, edges, handlePointerOver, handlePointerOut, 
-  hoveredText, hoveredNodeIsCenter, 
-  textPosition,
-  centerNodeTrackPosition,
-  onUpdateCenterScreenPos,
+  hoveredNodeIsCenter,
+  hoveredNodeTrackPosition,
+  onUpdateTextScreenPos,
   isInteracting, controlsRef
 }: GraphRendererProps) {
 
   return (
     <>
       <ScreenPositionUpdater 
-        trackPosition={centerNodeTrackPosition} 
-        yOffset={0.6}
-        onUpdatePosition={onUpdateCenterScreenPos} 
+        trackPosition={hoveredNodeTrackPosition}
+        isCenter={hoveredNodeIsCenter}
+        onUpdatePosition={onUpdateTextScreenPos}
       />
 
       <Text visible={false} fontSize={0.01}>{PRELOAD_CHARS}</Text>
@@ -269,38 +276,6 @@ function GraphRenderer({
         /> 
       ))}
       
-      {hoveredText && !hoveredNodeIsCenter && (
-        <Billboard 
-          position={textPosition}
-          follow={true} 
-          lockX={false} 
-          lockY={false} 
-          lockZ={false}
-          renderOrder={998} 
-        > 
-          <Text
-            color="#BF3BDE"
-            fontSize={0.26}
-            maxWidth={1.6}
-            fontWeight={'normal'}
-            fillOpacity={1}
-            outlineOpacity={1}
-            lineHeight={1.2}
-            letterSpacing={0.02}
-            textAlign="center"
-            whiteSpace="nowrap"
-            anchorX="center"
-            anchorY="middle"
-            outlineColor="#000000"
-            outlineWidth={0.012}
-            renderOrder={999} 
-            material-depthTest={false} 
-          >
-            {hoveredText}
-          </Text>
-        </Billboard>
-      )}
-
       <OrbitControls 
         ref={controlsRef}
         enableZoom={false}
@@ -336,10 +311,9 @@ export default function GraphView({ nodesData }: GraphProps) {
   const [isInteracting, setIsInteracting] = useState(false);
   const [hoveredText, setHoveredText] = useState<string | null>(null);
   const [hoveredNodeIsCenter, setHoveredNodeIsCenter] = useState(false);
-  const [billboardTextPosition, setBillboardTextPosition] = useState<THREE.Vector3>(new THREE.Vector3());
-  const [centerNodeWorldPos, setCenterNodeWorldPos] = useState<THREE.Vector3 | null>(null);
-  const [centerTextScreenPos, setCenterTextScreenPos] = useState<{ x: number; y: number } | null>(null);
-  const [showCenterTextOverlay, setShowCenterTextOverlay] = useState(false); 
+  const [hoveredNodeWorldPos, setHoveredNodeWorldPos] = useState<THREE.Vector3 | null>(null);
+  const [textScreenPos, setTextScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const [showTextOverlay, setShowTextOverlay] = useState(false);
   const [shouldRenderGraph, setShouldRenderGraph] = useState(false);
 
   const displayNodesData = useMemo(() => {
@@ -377,30 +351,21 @@ export default function GraphView({ nodesData }: GraphProps) {
     setHoveredText(text);
     setHoveredNodeIsCenter(isCenter);
     document.body.style.cursor = 'pointer';
-
-    if (isCenter) {
-      setCenterNodeWorldPos(position);
-      setShowCenterTextOverlay(true);
-      setBillboardTextPosition(new THREE.Vector3());
-    } else {
-      const yOffset = 0.3;
-      setBillboardTextPosition(position.clone().add(new THREE.Vector3(0, yOffset, 0)));
-      setShowCenterTextOverlay(false);
-      setCenterNodeWorldPos(null);
-    }
+    setHoveredNodeWorldPos(position);
+    setShowTextOverlay(true);
   };
 
   const handlePointerOut = () => {
     setIsInteracting(false);
     setHoveredText(null);
     setHoveredNodeIsCenter(false);
-    setShowCenterTextOverlay(false);
-    setCenterNodeWorldPos(null);
+    setShowTextOverlay(false);
+    setHoveredNodeWorldPos(null);
     document.body.style.cursor = 'default';
   };
 
-  const handleUpdateCenterScreenPos = useCallback((screenPos: { x: number; y: number } | null) => {
-    setCenterTextScreenPos(screenPos);
+  const handleUpdateTextScreenPos = useCallback((screenPos: { x: number; y: number } | null) => {
+    setTextScreenPos(screenPos);
   }, []);
 
   useEffect(() => {
@@ -428,33 +393,43 @@ export default function GraphView({ nodesData }: GraphProps) {
             edges={edges}
             handlePointerOver={handlePointerOver}
             handlePointerOut={handlePointerOut}
-            hoveredText={hoveredText}
             hoveredNodeIsCenter={hoveredNodeIsCenter}
-            textPosition={billboardTextPosition}
-            centerNodeTrackPosition={centerNodeWorldPos}
-            onUpdateCenterScreenPos={handleUpdateCenterScreenPos}
+            hoveredNodeTrackPosition={hoveredNodeWorldPos}
+            onUpdateTextScreenPos={handleUpdateTextScreenPos}
             isInteracting={isInteracting}
             controlsRef={controlsRef}
           />
         )}
       </Canvas>
-      {showCenterTextOverlay && centerTextScreenPos && hoveredText && (
+      {showTextOverlay && textScreenPos && hoveredText && (
         <div 
           style={{
             position: 'absolute',
-            left: `calc(50% + ${centerTextScreenPos.x}px)`,
-            top: `calc(50% + ${centerTextScreenPos.y}px)`,
+            left: `calc(50% + ${textScreenPos.x}px)`,
+            top: `calc(50% + ${textScreenPos.y}px)`,
             transform: 'translate(-50%, -50%)',
-            color: '#BF3BDE',
-            fontWeight: 'bold',
-            fontSize: '16px',
+            ...(hoveredNodeIsCenter 
+              ? { // Center node text: Darker Purple Gradient
+                  background: 'linear-gradient(to right, #A78BFA, #8B5CF6, #7C3AED)', // Updated darker colors
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  opacity: 0.9,
+                } 
+              : { // Other nodes text: Darker Solid color
+                  color: '#A78BFA', // Updated darker color (violet-400)
+                  fontWeight: 'normal',
+                  fontSize: '13px',
+                  opacity: 1.0,
+                }),
             padding: '4px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
             zIndex: 1000,
             pointerEvents: 'none',
-            opacity: 0.9,
-            transition: 'opacity 0.2s ease-in-out'
+            transition: 'opacity 0.2s ease-in-out, color 0.2s ease-in-out'
           }}
         >
           {hoveredText} 
