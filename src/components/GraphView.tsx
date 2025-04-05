@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, ThreeEvent, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Line } from '@react-three/drei';
+import { OrbitControls, Text, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
@@ -29,6 +29,9 @@ function Node({ position, text, isCenter = false, onPointerOver, onPointerOut }:
   const nonCenterBaseColor = '#8888ff'; 
   const centerBaseEmissiveIntensity = 0.6; 
   const nonCenterBaseEmissiveIntensity = 0.25;
+
+  // Glow size for the center node (adjust as needed)
+  const glowSize = nodeRadius * 2.5; // Relative size for glow div
 
   useEffect(() => {
     if (materialRef.current) {
@@ -107,6 +110,25 @@ function Node({ position, text, isCenter = false, onPointerOver, onPointerOut }:
         opacity={0} 
         depthTest={!isCenter}
       />
+      {/* Conditionally render CSS glow for center node */} 
+      {isCenter && (
+        <Html
+          as="div"
+          center
+          // Render between lines (1) and center node (3)
+          zIndexRange={[1, 2]} 
+          style={{ pointerEvents: 'none' }} 
+        >
+          <div
+            style={{
+              width: `${glowSize}rem`, // Use rem or other relative unit if preferred
+              height: `${glowSize}rem`,
+              borderRadius: '50%',
+              animation: 'breathingGlow 3s ease-in-out infinite',
+            }}
+          />
+        </Html>
+      )}
     </mesh>
   );
 }
@@ -381,6 +403,26 @@ export default function GraphView({ nodesData }: GraphProps) {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}> 
+      {/* Inject CSS Keyframes for the glow animation */} 
+      <style>
+        {`
+          @keyframes breathingGlow {
+            0% {
+              box-shadow: 0 0 0.8rem 0.3rem #7C3AED; /* Start/End state */
+              opacity: 0.2;
+            }
+            50% {
+              /* Reduced brightness at peak */
+              box-shadow: 0 0 1.2rem 0.5rem #A78BFA; 
+              opacity: 0.3; 
+            }
+            100% {
+              box-shadow: 0 0 0.8rem 0.3rem #7C3AED; /* Return to start */
+              opacity: 0.2;
+            }
+          }
+        `}
+      </style>
       <Canvas 
         camera={{ position: [0, 0, 14], fov: 70 }}
         style={{ background: 'radial-gradient(circle, #0b132b, #000000)', display: 'block' }}
