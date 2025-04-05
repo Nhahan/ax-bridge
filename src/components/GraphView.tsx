@@ -319,13 +319,15 @@ interface GraphProps {
 }
 
 const aiKeywords = [
-  "AI Integration", "Machine Learning", "Deep Reality", "Neural Synthesis", "NLP Bridge", 
-  "Computer Vision", "Robotic Process", "Data Automation", "Cloud Convergence", "Quantum Leap", 
-  "Cyber Resilience", "Decentralized Trust", "Connected Devices", "Next-Gen Comms", "Immersive VR", "AR Overlay", 
-  "Cognitive Singularity", "Human Enhancement", "Bio-Digital Fusion", "Nano Structures", "Exoplanetary AI", "Sustainable Tech",
-  "Predictive Models", "Contextual AI", "Strategic Planning", "Generative Design", "Simulated Worlds", "Explainable AI",
-  "Autonomous Systems", "Collective Intelligence", "Embodied Cognition", "Digital Twins", "Reality Mesh", "Future Interfaces",
-  "Ethical AI", "AI Governance", "Human-AI Collab", "Sentient Code?", "AGI Pathways", "Conscious Machines"
+  "Intelligent Ecosystem Orchestration", "Context-Aware Synthesis", "Cognitive Process Enhancement", "Seamless Connectivity Layer", "Data-Driven Insight Engine",
+  "Adaptive Interaction Platform", "Enhanced Digital Journeys", "Physical-Digital Convergence", "Predictive Opportunity Sensing", "Unified Experience Interface",
+  "AI-Optimized Workflows", "Value Stream Harmonization", "Intelligent Decision Augmentation", "Converged Operational Model", "Proactive Strategy Alignment",
+  "Real-Time Situational Awareness", "Embedded Cognitive Assistance", "Augmented Human Potential", "Connected Value Network", "Holistic Engagement Design",
+  "Responsible AI Principles", "Secure Information Flow", "Scalable Intelligence Architecture", "Automated Capability Generation", "Human-Centered AI Interaction",
+  "Transparent Operational Insights", "Strategic Foresight Engine", "Next-Generation Service Models", "Distributed Intelligence Synergy", "Sustainable Performance AI",
+  "Smart Environment Awareness", "AI Adoption Framework", "Continuous Improvement Cycles", "Dynamic Capability Allocation", "Simulated Future Scenarios",
+  "Intelligent Resource Management", "Process Discovery & Mining", "Personalized Information Delivery", "Future-Ready System Design", "AI-Enabled Transformation Pathways",
+  "Cross-Functional Synergy", "Intelligent Data Fabric", "Adaptive Integration Patterns", "Cognitive User Experience", "Emergent System Intelligence"
 ];
 
 export default function GraphView({ nodesData }: GraphProps) {
@@ -452,7 +454,7 @@ export default function GraphView({ nodesData }: GraphProps) {
             transform: 'translate(-50%, -50%)',
             ...(hoveredNodeIsCenter 
               ? { // Center node text: Darker Purple Gradient
-                  background: 'linear-gradient(to right, #A78BFA, #8B5CF6, #7C3AED)', // Updated darker colors
+                  background: 'linear-gradient(to right, #A78BFA, #8B5CF6, #7C3AED)',
                   WebkitBackgroundClip: 'text',
                   backgroundClip: 'text',
                   color: 'transparent',
@@ -461,7 +463,7 @@ export default function GraphView({ nodesData }: GraphProps) {
                   opacity: 0.9,
                 } 
               : { // Other nodes text: Darker Solid color
-                  color: '#A78BFA', // Updated darker color (violet-400)
+                  color: '#A78BFA',
                   fontWeight: 'normal',
                   fontSize: '13px',
                   opacity: 1.0,
