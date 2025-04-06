@@ -411,16 +411,16 @@ export default function GraphView({ nodesData }: GraphProps) {
           @keyframes breathingGlow {
             0% {
               box-shadow: 0 0 0.8rem 0.3rem #7C3AED; /* Start/End state */
-              opacity: 0.2;
+              opacity: 0.25;
             }
             50% {
               /* Reduced brightness at peak */
               box-shadow: 0 0 1.2rem 0.5rem #A78BFA; 
-              opacity: 0.3; 
+              opacity: 0.5; 
             }
             100% {
               box-shadow: 0 0 0.8rem 0.3rem #7C3AED; /* Return to start */
-              opacity: 0.2;
+              opacity: 0.25;
             }
           }
         `}
